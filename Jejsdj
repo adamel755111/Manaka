@@ -1,57 +1,91 @@
-print("Dupe working")
+print("Dupe attempt started")
 
--- Maak notificatie aan
+-- 🖥️ GUI Notification
 local gui = Instance.new("ScreenGui")
 gui.Name = "DupeNotif"
 gui.ResetOnSpawn = false
 gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
 local label = Instance.new("TextLabel")
-label.Size = UDim2.new(0, 200, 0, 50)
-label.Position = UDim2.new(0.5, -100, 0.9, 0)
+label.Size = UDim2.new(0, 250, 0, 50)
+label.Position = UDim2.new(0.5, -125, 0.9, 0)
 label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 label.BackgroundTransparency = 0.3
 label.TextColor3 = Color3.fromRGB(0, 255, 0)
 label.TextStrokeTransparency = 0.6
 label.Font = Enum.Font.SourceSansBold
-label.TextSize = 24
-label.Text = "Dupe working"
+label.TextSize = 22
+label.Text = "🧠 Dupe Attempt Running"
 label.Parent = gui
 
--- Delay en uitvoeren van grab
+-- 🧠 Delay before starting
 task.delay(1, function()
     local rStorage = game:GetService("ReplicatedStorage")
     local netPackage = rStorage:WaitForChild("Packages"):WaitForChild("Net")
     local grabEvent = netPackage:FindFirstChild("RE/StealService/Grab")
 
     if not grabEvent then
-        warn("Grab event not found.")
+        warn("⛔ Grab RemoteEvent not found!")
         return
     end
 
-    local function sendGrab(id)
-        grabEvent:FireServer("Grab", id)
+    -- 🔍 Zoek originele brainrot
+    local player = game:GetService("Players").LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local brainrot = nil
+
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item.Name == "Brainrot" then
+            brainrot = item
+            break
+        end
     end
 
+    if not brainrot then
+        warn("❌ Geen brainrot gevonden in Backpack")
+        return
+    end
+
+    -- 🧬 Mutation lezen
+    local mutation = brainrot:GetAttribute("Mutation")
+    if not mutation then
+        local mutVal = brainrot:FindFirstChild("Mutation")
+        mutation = mutVal and mutVal.Value or "None"
+    end
+
+    print(">> Originele Mutation:", mutation)
+
+    -- 🔁 Grab-class aanmaken
     local Grabber = {}
     Grabber.__index = Grabber
 
     function Grabber.new(id)
         local self = setmetatable({}, Grabber)
         self.id = id
-        print(">> [Client] Grab Queued:", id)
         return self
     end
 
     function Grabber:execute()
-        print(">> [Client] Executing Grab:", self.id)
-        sendGrab(self.id)
+        -- 🧬 Pas mutation toe aan een local dummy (client-side spoof)
+        local clone = brainrot:Clone()
+        if mutation then
+            if clone:GetAttribute("Mutation") ~= nil then
+                clone:SetAttribute("Mutation", mutation)
+            elseif clone:FindFirstChild("Mutation") then
+                clone.Mutation.Value = mutation
+            end
+        end
+
+        print(">> Grabbing brainrot ID:", self.id, "met mutation:", mutation)
+        grabEvent:FireServer("Grab", self.id)
     end
 
-    local generatedID = math.floor(os.clock() * 100000)
-    local grabInstance = Grabber.new(generatedID)
-    task.wait(0.5)
+    -- 🔐 Gebruik exact dezelfde ID als de originele brainrot
+    local brainrotID = brainrot:GetAttribute("ID") or math.floor(os.clock() * 100000)
+    local grabInstance = Grabber.new(brainrotID)
+    task.wait(0.3)
     grabInstance:execute()
 
+    task.wait(1)
     gui:Destroy()
 end)
